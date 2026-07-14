@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
+import { LogIn, LogOut } from "lucide-react";
+import { MatchupView } from "./components/MatchupView";
+import { PreSortPanel } from "./components/PreSortPanel";
+import { ResultsView } from "./components/ResultsView";
 import {
   getStoredSpotifyToken,
   handleSpotifyCallback,
   loginWithSpotify,
   logoutSpotify,
 } from "./lib/spotifyAuth";
+import { clearSortSession, loadSortSession, saveSortSession } from "./lib/sortPersistence";
+import { applySortChoice, createSortSession, type SortChoice, type SortMode, type SortSession } from "./lib/sortingEngine";
 import { fetchSpotifyPlaylistForSorting, type SpotifyPlaylistForSorting } from "./lib/spotifyPlaylist";
 
 export default function App() {
@@ -12,6 +18,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [playlistUrl, setPlaylistUrl] = useState("");
   const [playlist, setPlaylist] = useState<SpotifyPlaylistForSorting | null>(null);
+  const [sortSession, setSortSession] = useState<SortSession | null>(() => loadSortSession());
   const [isLoadingPlaylist, setIsLoadingPlaylist] = useState(false);
 
   useEffect(() => {
@@ -26,6 +33,8 @@ export default function App() {
     event.preventDefault();
     setError(null);
     setPlaylist(null);
+    setSortSession(null);
+    clearSortSession();
     setIsLoadingPlaylist(true);
 
     try {
@@ -35,6 +44,40 @@ export default function App() {
     } finally {
       setIsLoadingPlaylist(false);
     }
+  }
+
+  function handleStartSorting(
+    selectedTracks: SpotifyPlaylistForSorting["tracks"],
+    mode: SortMode,
+    requestedSubsetSize: number | null,
+  ) {
+    if (!playlist) {
+      return;
+    }
+
+    const nextSession = createSortSession(playlist, selectedTracks, mode, requestedSubsetSize);
+    saveSortSession(nextSession);
+    setSortSession(nextSession);
+  }
+
+  function handleChoice(choice: SortChoice) {
+    setSortSession((currentSession) => {
+      if (!currentSession) {
+        return currentSession;
+      }
+
+      const nextSession = applySortChoice(currentSession, choice);
+      saveSortSession(nextSession);
+      return nextSession;
+    });
+  }
+
+  function handleStartOver() {
+    clearSortSession();
+    setSortSession(null);
+    setPlaylist(null);
+    setPlaylistUrl("");
+    setError(null);
   }
 
   return (
@@ -55,27 +98,29 @@ export default function App() {
                 Spotify connected
               </span>
               <button
-                className="rounded-full bg-white px-6 py-3 font-bold text-sky-800 shadow-lg ring-1 ring-sky-100 transition hover:-translate-y-0.5 hover:shadow-xl"
+                className="inline-flex rounded-full bg-white px-6 py-3 font-bold text-sky-800 shadow-lg ring-1 ring-sky-100 transition hover:-translate-y-0.5 hover:shadow-xl"
                 onClick={() => {
                   logoutSpotify();
                   setIsAuthed(false);
                   setPlaylist(null);
                 }}
               >
+                <LogOut className="mr-2 h-5 w-5" aria-hidden="true" />
                 Log out
               </button>
             </>
           ) : (
             <button
-              className="rounded-full bg-gradient-to-b from-cyan-200 to-sky-400 px-7 py-3 font-black text-white shadow-lg shadow-sky-300/40 ring-1 ring-white/80 transition hover:-translate-y-0.5 hover:from-cyan-100 hover:to-sky-300 hover:shadow-xl"
+              className="inline-flex rounded-full bg-gradient-to-b from-cyan-200 to-sky-400 px-7 py-3 font-black text-white shadow-lg shadow-sky-300/40 ring-1 ring-white/80 transition hover:-translate-y-0.5 hover:from-cyan-100 hover:to-sky-300 hover:shadow-xl"
               onClick={() => void loginWithSpotify()}
             >
+              <LogIn className="mr-2 h-5 w-5" aria-hidden="true" />
               Log in with Spotify
             </button>
           )}
         </div>
 
-        {isAuthed && (
+        {isAuthed && !sortSession && (
           <form className="mx-auto mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row" onSubmit={handlePlaylistSubmit}>
             <input
               className="min-h-12 flex-1 rounded-full border border-sky-100 bg-white/85 px-5 text-sky-950 shadow-inner outline-none transition placeholder:text-sky-900/35 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
@@ -95,49 +140,11 @@ export default function App() {
         )}
       </section>
 
-      {playlist && (
-        <section className="mx-auto mt-8 w-full max-w-4xl rounded-[2rem] border border-white/80 bg-white/65 p-5 shadow-[0_20px_60px_rgba(54,128,171,0.18)] backdrop-blur-md">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            {playlist.imageUrl && (
-              <img
-                alt=""
-                className="h-28 w-28 rounded-3xl object-cover shadow-lg ring-4 ring-white/90"
-                src={playlist.imageUrl}
-              />
-            )}
-            <div className="text-left">
-              <p className="text-sm font-bold text-cyan-700">Ready for sorting</p>
-              <h2 className="text-3xl font-black text-sky-950">{playlist.name}</h2>
-              <p className="mt-1 text-sky-900/70">
-                {playlist.tracks.length} valid songs from {playlist.ownerName}
-                {playlist.filteredOutCount > 0 ? `, ${playlist.filteredOutCount} local or non-song items skipped` : ""}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3">
-            {playlist.tracks.slice(0, 8).map((track) => (
-              <article
-                className="flex items-center gap-4 rounded-3xl border border-white/80 bg-white/70 p-3 text-left shadow-sm"
-                key={track.id}
-              >
-                {track.albumArtUrl && (
-                  <img alt="" className="h-14 w-14 rounded-2xl object-cover shadow-sm" src={track.albumArtUrl} />
-                )}
-                <div className="min-w-0 flex-1">
-                  <h3 className="truncate font-black text-sky-950">{track.title}</h3>
-                  <p className="truncate text-sm text-sky-900/70">{track.artist}</p>
-                </div>
-                {!track.previewUrl && (
-                  <span className="rounded-full bg-sky-100 px-3 py-1 text-xs font-bold text-sky-700">
-                    No preview
-                  </span>
-                )}
-              </article>
-            ))}
-          </div>
-        </section>
+      {!sortSession && playlist && <PreSortPanel key={playlist.id} playlist={playlist} onStart={handleStartSorting} />}
+      {sortSession?.status === "sorting" && (
+        <MatchupView session={sortSession} onChoose={handleChoice} onStartOver={handleStartOver} />
       )}
+      {sortSession?.status === "complete" && <ResultsView session={sortSession} onStartOver={handleStartOver} />}
     </main>
   );
 }
