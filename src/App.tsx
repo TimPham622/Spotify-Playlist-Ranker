@@ -101,8 +101,11 @@ export default function App() {
                 className="inline-flex rounded-full bg-white px-6 py-3 font-bold text-sky-800 shadow-lg ring-1 ring-sky-100 transition hover:-translate-y-0.5 hover:shadow-xl"
                 onClick={() => {
                   logoutSpotify();
+                  clearSortSession();
                   setIsAuthed(false);
                   setPlaylist(null);
+                  setSortSession(null);
+                  setPlaylistUrl("");
                 }}
               >
                 <LogOut className="mr-2 h-5 w-5" aria-hidden="true" />
