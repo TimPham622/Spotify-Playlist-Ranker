@@ -1,5 +1,5 @@
 import { RefreshCcw, Trophy } from "lucide-react";
-import { getRankedTracks, type SortSession } from "../lib/sortingEngine";
+import { getModeLabel, getRankedTracks, isFastSortSession, type SortSession } from "../lib/sortingEngine";
 
 type ResultsViewProps = {
   session: SortSession;
@@ -8,6 +8,8 @@ type ResultsViewProps = {
 
 export function ResultsView({ session, onStartOver }: ResultsViewProps) {
   const rankedTracks = getRankedTracks(session);
+  const isFastMode = isFastSortSession(session);
+  const heading = isFastMode ? "Approximate top 10" : "Final ranking";
 
   return (
     <section className="mx-auto mt-8 w-full max-w-5xl rounded-[2rem] border border-white/80 bg-white/65 p-6 shadow-[0_20px_60px_rgba(54,128,171,0.18)] backdrop-blur-md">
@@ -23,12 +25,18 @@ export function ResultsView({ session, onStartOver }: ResultsViewProps) {
           <div>
             <p className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-[0.16em] text-cyan-700">
               <Trophy className="h-4 w-4" aria-hidden="true" />
-              Final ranking
+              {heading}
             </p>
             <h2 className="mt-1 text-3xl font-black text-sky-950">{session.playlist.name}</h2>
             <p className="mt-1 text-sky-900/70">
-              {rankedTracks.length} songs sorted in {session.comparisonsMade} matchups
+              {rankedTracks.length} songs shown from {getModeLabel(session)} in {session.comparisonsMade} matchups
             </p>
+            {isFastMode && (
+              <p className="mt-2 max-w-2xl text-sm text-sky-900/70">
+                Fast top 10 is approximate: it uses a two-loss qualification round, then ranks the strongest finalists.
+                A full ranking can produce different results.
+              </p>
+            )}
           </div>
         </div>
 
@@ -58,7 +66,7 @@ export function ResultsView({ session, onStartOver }: ResultsViewProps) {
               <h3 className="truncate font-black text-sky-950">{track.title}</h3>
               <p className="truncate text-sm text-sky-900/70">{track.artist}</p>
             </div>
-            {tieSize > 1 && (
+            {!isFastMode && tieSize > 1 && (
               <span className="col-span-2 rounded-full bg-lime-100 px-3 py-1 text-center text-xs font-black text-lime-800 sm:col-span-1">
                 Tied rank
               </span>

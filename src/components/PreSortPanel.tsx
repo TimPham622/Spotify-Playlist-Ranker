@@ -1,6 +1,7 @@
-import { ListMusic, Shuffle, Sparkles } from "lucide-react";
+import { ListMusic, Shuffle, Sparkles, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
+  estimateFastTop10Matchups,
   estimateMergeSortMatchups,
   pickRandomSubset,
   type SortMode,
@@ -14,11 +15,13 @@ type PreSortPanelProps = {
 
 export function PreSortPanel({ playlist, onStart }: PreSortPanelProps) {
   const trackCount = playlist.tracks.length;
-  const isLargePlaylist = trackCount > 50;
+  const minSubsetSize = Math.min(trackCount, 2);
   const [subsetSize, setSubsetSize] = useState(Math.min(50, Math.max(trackCount, 1)));
-  const safeSubsetSize = Math.min(Math.max(subsetSize, Math.min(trackCount, 2)), trackCount);
+  const safeSubsetSize = trackCount === 0 ? 0 : Math.min(Math.max(subsetSize, minSubsetSize), trackCount);
   const allEstimate = useMemo(() => estimateMergeSortMatchups(trackCount), [trackCount]);
+  const fastEstimate = useMemo(() => estimateFastTop10Matchups(trackCount), [trackCount]);
   const subsetEstimate = useMemo(() => estimateMergeSortMatchups(safeSubsetSize), [safeSubsetSize]);
+  const fastResultCount = Math.min(trackCount, 10);
 
   if (trackCount === 0) {
     return (
@@ -30,7 +33,7 @@ export function PreSortPanel({ playlist, onStart }: PreSortPanelProps) {
   }
 
   return (
-    <section className="mx-auto mt-8 w-full max-w-4xl rounded-[2rem] border border-white/80 bg-white/65 p-6 shadow-[0_20px_60px_rgba(54,128,171,0.18)] backdrop-blur-md">
+    <section className="mx-auto mt-8 w-full max-w-5xl rounded-[2rem] border border-white/80 bg-white/65 p-6 shadow-[0_20px_60px_rgba(54,128,171,0.18)] backdrop-blur-md">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
         {playlist.imageUrl && (
           <img
@@ -50,85 +53,105 @@ export function PreSortPanel({ playlist, onStart }: PreSortPanelProps) {
       </div>
 
       <div className="mt-6 rounded-[1.5rem] border border-white/80 bg-gradient-to-b from-white/80 to-cyan-50/70 p-5 shadow-inner">
-        {isLargePlaylist ? (
-          <>
-            <div className="flex items-start gap-3 text-left">
-              <Sparkles className="mt-1 h-5 w-5 shrink-0 text-cyan-600" aria-hidden="true" />
-              <div>
-                <h3 className="text-xl font-black text-sky-950">This playlist is large.</h3>
-                <p className="mt-1 text-sky-900/75">
-                  Do you want to sort all {trackCount} songs (estimated {allEstimate} matchups), or pick a random
-                  subset?
-                </p>
-              </div>
-            </div>
+        <div className="flex items-start gap-3 text-left">
+          <Sparkles className="mt-1 h-5 w-5 shrink-0 text-cyan-600" aria-hidden="true" />
+          <div>
+            <h3 className="text-xl font-black text-sky-950">Choose a ranking mode</h3>
+            <p className="mt-1 text-sky-900/75">
+              {trackCount > 50
+                ? `This playlist is large, so Fast top 10 or a random subset can save a lot of clicks.`
+                : `Full ranking is manageable here, but Fast top 10 is still available when you just want favourites.`}
+            </p>
+          </div>
+        </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
-              <label className="text-left">
-                <span className="text-sm font-black uppercase tracking-[0.14em] text-cyan-700">
-                  Random subset size
-                </span>
-                <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <input
-                    className="h-3 flex-1 accent-cyan-500"
-                    max={trackCount}
-                    min={2}
-                    onChange={(event) => setSubsetSize(Number(event.target.value))}
-                    type="range"
-                    value={safeSubsetSize}
-                  />
-                  <input
-                    className="min-h-11 w-28 rounded-full border border-cyan-100 bg-white px-4 text-center font-black text-sky-950 shadow-inner outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-                    max={trackCount}
-                    min={2}
-                    onChange={(event) => setSubsetSize(Number(event.target.value))}
-                    type="number"
-                    value={safeSubsetSize}
-                  />
-                </div>
-                <span className="mt-2 block text-sm text-sky-900/70">
-                  {safeSubsetSize} songs, estimated {subsetEstimate} matchups
-                </span>
-              </label>
-
-              <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
-                <button
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-lime-200 to-cyan-300 px-6 font-black text-sky-900 shadow-lg shadow-cyan-200/50 ring-1 ring-white/90 transition hover:-translate-y-0.5 hover:shadow-xl"
-                  onClick={() => onStart(pickRandomSubset(playlist.tracks, safeSubsetSize), "subset", safeSubsetSize)}
-                  type="button"
-                >
-                  <Shuffle className="h-5 w-5" aria-hidden="true" />
-                  Random subset
-                </button>
-                <button
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-6 font-black text-sky-800 shadow-lg ring-1 ring-sky-100 transition hover:-translate-y-0.5 hover:shadow-xl"
-                  onClick={() => onStart(playlist.tracks, "all", null)}
-                  type="button"
-                >
-                  <ListMusic className="h-5 w-5" aria-hidden="true" />
-                  Sort all
-                </button>
-              </div>
+        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          <article className="rounded-[1.5rem] border border-white/80 bg-white/75 p-4 text-left shadow-sm">
+            <div className="flex items-center gap-2 text-cyan-700">
+              <ListMusic className="h-5 w-5" aria-hidden="true" />
+              <h4 className="font-black text-sky-950">Full ranking</h4>
             </div>
-          </>
-        ) : (
-          <div className="flex flex-col gap-5 text-left sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="text-xl font-black text-sky-950">Small enough to sort in one pass</h3>
-              <p className="mt-1 text-sky-900/75">
-                Sort all {trackCount} songs, estimated {allEstimate} matchups.
-              </p>
-            </div>
+            <p className="mt-3 text-sm text-sky-900/75">
+              Uses every valid song and produces a complete ordered ranking. Ties are allowed.
+            </p>
+            <p className="mt-3 rounded-2xl bg-sky-50 px-3 py-2 text-sm font-bold text-sky-800">
+              Estimated {allEstimate} matchups
+            </p>
             <button
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-lime-200 to-cyan-300 px-7 font-black text-sky-900 shadow-lg shadow-cyan-200/50 ring-1 ring-white/90 transition hover:-translate-y-0.5 hover:shadow-xl"
+              className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white px-6 font-black text-sky-800 shadow-lg ring-1 ring-sky-100 transition hover:-translate-y-0.5 hover:shadow-xl"
               onClick={() => onStart(playlist.tracks, "all", null)}
               type="button"
             >
               <ListMusic className="h-5 w-5" aria-hidden="true" />
-              Start sorting
+              Start full ranking
             </button>
-          </div>
-        )}
+          </article>
+
+          <article className="rounded-[1.5rem] border border-white/80 bg-white/75 p-4 text-left shadow-sm">
+            <div className="flex items-center gap-2 text-cyan-700">
+              <Zap className="h-5 w-5" aria-hidden="true" />
+              <h4 className="font-black text-sky-950">Fast top 10</h4>
+            </div>
+            <p className="mt-3 text-sm text-sky-900/75">
+              Quickly estimate your top 10 using a two-loss qualification round, followed by a final ranking of the
+              strongest candidates.
+            </p>
+            <p className="mt-3 rounded-2xl bg-lime-50 px-3 py-2 text-sm font-bold text-lime-800">
+              Approx. {fastEstimate} matchups, no ties, returns {fastResultCount} song
+              {fastResultCount === 1 ? "" : "s"}
+            </p>
+            <button
+              className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-lime-200 to-cyan-300 px-6 font-black text-sky-900 shadow-lg shadow-cyan-200/50 ring-1 ring-white/90 transition hover:-translate-y-0.5 hover:shadow-xl"
+              onClick={() => onStart(playlist.tracks, "fast", null)}
+              type="button"
+            >
+              <Zap className="h-5 w-5" aria-hidden="true" />
+              Find fast top 10
+            </button>
+          </article>
+
+          <article className="rounded-[1.5rem] border border-white/80 bg-white/75 p-4 text-left shadow-sm">
+            <div className="flex items-center gap-2 text-cyan-700">
+              <Shuffle className="h-5 w-5" aria-hidden="true" />
+              <h4 className="font-black text-sky-950">Random subset</h4>
+            </div>
+            <p className="mt-3 text-sm text-sky-900/75">
+              Randomly selects the requested number of songs, then fully ranks that subset. Ties are allowed.
+            </p>
+            <label className="mt-4 block">
+              <span className="text-xs font-black uppercase tracking-[0.14em] text-cyan-700">Subset size</span>
+              <div className="mt-3 flex flex-col gap-3">
+                <input
+                  className="h-3 flex-1 accent-cyan-500"
+                  max={trackCount}
+                  min={minSubsetSize}
+                  onChange={(event) => setSubsetSize(Number(event.target.value))}
+                  type="range"
+                  value={safeSubsetSize}
+                />
+                <input
+                  className="min-h-11 w-full rounded-full border border-cyan-100 bg-white px-4 text-center font-black text-sky-950 shadow-inner outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                  max={trackCount}
+                  min={minSubsetSize}
+                  onChange={(event) => setSubsetSize(Number(event.target.value))}
+                  type="number"
+                  value={safeSubsetSize}
+                />
+              </div>
+            </label>
+            <p className="mt-3 rounded-2xl bg-sky-50 px-3 py-2 text-sm font-bold text-sky-800">
+              {safeSubsetSize} songs, estimated {subsetEstimate} matchups
+            </p>
+            <button
+              className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white px-6 font-black text-sky-800 shadow-lg ring-1 ring-sky-100 transition hover:-translate-y-0.5 hover:shadow-xl"
+              onClick={() => onStart(pickRandomSubset(playlist.tracks, safeSubsetSize), "subset", safeSubsetSize)}
+              type="button"
+            >
+              <Shuffle className="h-5 w-5" aria-hidden="true" />
+              Sort random subset
+            </button>
+          </article>
+        </div>
       </div>
     </section>
   );

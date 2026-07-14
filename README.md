@@ -8,11 +8,14 @@ A static, frontend-only React app for ranking a Spotify playlist through head-to
 - Playlist support for tracks the logged-in user is allowed to read
 - Spotify playlist URL, URI, or raw playlist ID parsing
 - Local file, podcast, and unavailable item filtering
+- Full ranking with ties
+- Approximate Fast top 10 with no ties
+- Random subset ranking with ties
 - Large-playlist pre-sort with estimated matchup counts
 - Random subset sorting for click reduction
 - Serializable merge-sort state machine
 - Tie grouping, including shared final ranks like `1, 2, 2, 4`
-- 30-second preview audio when Spotify provides `preview_url`
+- Spotify track embeds in the active ranking cards
 - Refresh-safe progress persistence with a Start Over reset
 - Bright Frutiger Aero-inspired UI instead of Spotify dark mode
 - `HashRouter` for GitHub Pages compatibility
@@ -122,3 +125,44 @@ npm run preview
 Spotify auth tokens are stored under `spotify-bias-sorter:token`.
 
 Sort progress is stored under `spotify-bias-sorter:sort-session` after every matchup click. The Start Over button clears the saved sort session.
+
+## Ranking Modes
+
+Full ranking uses every valid song and fully sorts the playlist with head-to-head merge-sort comparisons. The Tie option is available, and tied songs share the same final rank.
+
+Fast top 10 uses every valid song but only estimates the top results. For playlists with more than 20 songs, it first runs a two-loss qualification round: songs are compared head-to-head, the loser receives a loss, and a song is eliminated after two losses. When 20 candidates remain, the app fully ranks those finalists without ties and displays the top 10. For playlists with 20 songs or fewer, Fast mode skips qualification and ranks the whole set without ties. Fast mode returns 10 songs when possible and all songs when fewer than 10 sortable songs exist.
+
+Random subset picks the requested number of songs at random, then fully ranks that subset. The Tie option is available, and tied songs share ranks.
+
+Fast top 10 is intentionally approximate. It can produce different results from a full ranking because strong songs can be eliminated during qualification after two unfavorable matchups.
+
+## Spotify Embeds
+
+The active Song A and Song B ranking cards use Spotify track embeds instead of Spotify's deprecated or often-unavailable `preview_url` audio previews. Each card embeds:
+
+```txt
+https://open.spotify.com/embed/track/{spotifyTrackId}
+```
+
+The app does not use the Spotify Web Playback SDK, playback OAuth scopes, a backend, a client secret, autoplay, or scraped audio URLs.
+
+Spotify embeds require network access to Spotify and can be affected by browser privacy settings, content blockers, regional Spotify availability, and whether the user can play the track through Spotify. The app's Spotify authentication and development-mode playlist restrictions still apply.
+
+## Manual Verification
+
+This repo currently has no test script or test framework. The sorting logic is kept in pure functions in `src/lib/sortingEngine.ts`, the playlist item parser is isolated in `src/lib/spotifyPlaylist.ts`, and the embed URL builder is isolated in `src/lib/spotifyEmbeds.ts` so focused tests can be added later.
+
+Manual checks to run after changes:
+
+1. Load a valid playlist.
+2. Confirm the setup screen shows Full ranking, Fast top 10, and Random subset.
+3. Start Full ranking and confirm Song A, Tie, and Song B appear.
+4. Start Fast top 10 and confirm only Song A and Song B appear.
+5. Confirm each ranking card shows a Spotify embed and Open in Spotify link.
+6. Confirm no separate large album artwork appears on the two ranking cards.
+7. Confirm playlist artwork still appears before sorting.
+8. Confirm album artwork still appears in final results.
+9. Refresh during Fast qualification and confirm the session resumes.
+10. Complete Fast mode with more than 20 songs and confirm exactly 10 results.
+11. Complete Fast mode with fewer than 10 songs and confirm all songs appear.
+12. Confirm GitHub Pages asset paths and routing still work.

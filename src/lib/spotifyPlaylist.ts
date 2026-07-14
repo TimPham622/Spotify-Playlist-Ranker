@@ -15,7 +15,6 @@ export type SortableTrack = {
   artist: string;
   albumName: string;
   albumArtUrl: string;
-  previewUrl: string | null;
   spotifyUrl: string;
   durationMs: number;
 };
@@ -62,7 +61,6 @@ type SpotifyPlaylistTrack = {
   name: string;
   type: string;
   is_local: boolean;
-  preview_url: string | null;
   duration_ms: number;
   external_urls: {
     spotify?: string;
@@ -153,7 +151,7 @@ async function fetchPlaylistSummary(playlistId: string) {
 
 async function fetchAllPlaylistTracks(playlistId: string) {
   const fields =
-    "items(is_local,item(id,name,type,is_local,preview_url,duration_ms,external_urls,artists(name),album(name,images))),next,total";
+    "items(is_local,item(id,name,type,is_local,duration_ms,external_urls,artists(name),album(name,images))),next,total";
   let url: string | null = `/playlists/${playlistId}/items?${new URLSearchParams({ fields, limit: "50" })}`;
   const tracks: SortableTrack[] = [];
   let playlistPosition = 0;
@@ -190,7 +188,6 @@ export function normalizePlaylistItem(entry: SpotifyPlaylistItemEntry, playlistP
     artist: item.artists.map((artist) => artist.name).join(", ") || "Unknown artist",
     albumName: item.album.name,
     albumArtUrl: pickLargestImage(item.album.images),
-    previewUrl: item.preview_url,
     spotifyUrl: item.external_urls.spotify ?? "",
     durationMs: item.duration_ms,
   };
