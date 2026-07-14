@@ -5,6 +5,7 @@ const SPOTIFY_API_BASE_URL = "https://api.spotify.com/v1";
 const TOKEN_STORAGE_KEY = "spotify-bias-sorter:token";
 const CODE_VERIFIER_KEY = "spotify-bias-sorter:code-verifier";
 const AUTH_STATE_KEY = "spotify-bias-sorter:auth-state";
+const REDACTED_VALUE = "[redacted]";
 
 export const SPOTIFY_SCOPES = ["playlist-read-private"] as const;
 
@@ -18,6 +19,30 @@ export type SpotifyToken = {
 };
 
 type SpotifyTokenResponse = Omit<SpotifyToken, "expires_at">;
+
+export type SpotifyErrorBody = {
+  error?: string | { status?: number; message?: string; reason?: string };
+  error_description?: string;
+  [key: string]: unknown;
+};
+
+export class SpotifyApiError extends Error {
+  status: number;
+  url: string;
+  body: SpotifyErrorBody | null;
+  spotifyMessage: string | null;
+
+  constructor(status: number, url: string, body: SpotifyErrorBody | null) {
+    const spotifyMessage = extractSpotifyErrorMessage(body);
+
+    super(buildSpotifyApiErrorMessage(status, spotifyMessage));
+    this.name = "SpotifyApiError";
+    this.status = status;
+    this.url = url;
+    this.body = body;
+    this.spotifyMessage = spotifyMessage;
+  }
+}
 
 function getClientId() {
   const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
@@ -215,8 +240,17 @@ export async function spotifyApi<T>(pathOrUrl: string, init: RequestInit = {}) {
   const response = await fetch(url, { ...init, headers });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw new Error(body?.error?.message ?? `Spotify API request failed (${response.status}).`);
+    const body = await readSpotifyErrorBody(response);
+
+    if (import.meta.env.DEV) {
+      console.warn("Spotify API request failed", {
+        url,
+        status: response.status,
+        body: sanitizeSpotifyErrorBody(body),
+      });
+    }
+
+    throw new SpotifyApiError(response.status, url, body);
   }
 
   if (response.status === 204) {
@@ -224,6 +258,78 @@ export async function spotifyApi<T>(pathOrUrl: string, init: RequestInit = {}) {
   }
 
   return response.json() as Promise<T>;
+}
+
+export function extractSpotifyErrorMessage(body: SpotifyErrorBody | null) {
+  if (!body) {
+    return null;
+  }
+
+  if (body.error && typeof body.error === "object" && typeof body.error.message === "string") {
+    return body.error.message;
+  }
+
+  if (typeof body.error_description === "string") {
+    return body.error_description;
+  }
+
+  if (typeof body.error === "string") {
+    return body.error;
+  }
+
+  return null;
+}
+
+function buildSpotifyApiErrorMessage(status: number, spotifyMessage: string | null) {
+  if (status === 403) {
+    const details = spotifyMessage && spotifyMessage.toLowerCase() !== "forbidden" ? ` Spotify said: ${spotifyMessage}` : "";
+    return `Spotify API request failed (403). Spotify blocked this request; this can happen when your account is not enabled for this development-mode app or when the playlist is not owned/collaborated by the signed-in user.${details}`;
+  }
+
+  return `Spotify API request failed (${status})${spotifyMessage ? `: ${spotifyMessage}` : "."}`;
+}
+
+async function readSpotifyErrorBody(response: Response) {
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (!contentType.includes("application/json")) {
+    return null;
+  }
+
+  return response.json().catch(() => null) as Promise<SpotifyErrorBody | null>;
+}
+
+function sanitizeSpotifyErrorBody(body: SpotifyErrorBody | null): SpotifyErrorBody | null {
+  return sanitizeValue(body) as SpotifyErrorBody | null;
+}
+
+function sanitizeValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(sanitizeValue);
+  }
+
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, childValue]) => [
+      key,
+      shouldRedactKey(key) ? REDACTED_VALUE : sanitizeValue(childValue),
+    ]),
+  );
+}
+
+function shouldRedactKey(key: string) {
+  const normalizedKey = key.toLowerCase();
+  return (
+    normalizedKey.includes("authorization") ||
+    normalizedKey.includes("access_token") ||
+    normalizedKey.includes("refresh_token") ||
+    normalizedKey.includes("client_secret") ||
+    normalizedKey === "token" ||
+    normalizedKey === "secret"
+  );
 }
 
 export function logoutSpotify() {

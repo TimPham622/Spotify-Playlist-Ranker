@@ -5,7 +5,7 @@ A static, frontend-only React app for ranking a Spotify playlist through head-to
 ## Features
 
 - Spotify PKCE login with `playlist-read-private`
-- Public playlist and owned private playlist support
+- Playlist support for tracks the logged-in user is allowed to read
 - Spotify playlist URL, URI, or raw playlist ID parsing
 - Local file, podcast, and unavailable item filtering
 - Large-playlist pre-sort with estimated matchup counts
@@ -70,6 +70,23 @@ In GitHub:
 6. Push to `main` or run the deploy workflow manually.
 
 The Spotify client ID is embedded in the frontend build. This is normal for PKCE-based browser apps; the app does not use a client secret.
+
+## Spotify Troubleshooting
+
+Use these redirect URIs in the Spotify Developer Dashboard:
+
+```txt
+http://127.0.0.1:5173/
+https://timpham622.github.io/Spotify-Playlist-Ranker/
+```
+
+If the app is still in Spotify development mode, add every tester in the app's user management area. Go to the Spotify Developer Dashboard, open the app, open Settings, then Users Management, and add the user's Spotify account email.
+
+After changing redirect URIs, scopes, or test-user access, log out of this app and log back in so Spotify issues a fresh token.
+
+Spotify's current playlist items API can return `403 Forbidden` unless the signed-in user owns the playlist or is a collaborator. A playlist being public does not mean this development-mode app can read its items. For someone else's public playlist, copy the tracks into one of your own playlists and sort that copy.
+
+To inspect a failed request, open the browser DevTools Network panel, retry loading the playlist, and check the Spotify request URL, status code, and JSON response body. Do not share bearer tokens, refresh tokens, client secrets, repository secrets, or request headers that contain `Authorization`.
 
 ## Changing The GitHub Pages Base Path
 
