@@ -1,4 +1,4 @@
-import { ListMusic, Shuffle, Sparkles, Zap } from "lucide-react";
+import { ListMusic, Shuffle, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   estimateFastTop10Matchups,
@@ -25,104 +25,95 @@ export function PreSortPanel({ playlist, onStart }: PreSortPanelProps) {
 
   if (trackCount === 0) {
     return (
-      <section className="mx-auto mt-8 w-full max-w-4xl rounded-[2rem] border border-white/80 bg-white/65 p-6 text-center shadow-[0_20px_60px_rgba(54,128,171,0.18)] backdrop-blur-md">
-        <h2 className="text-2xl font-black text-sky-950">No sortable songs found</h2>
-        <p className="mt-2 text-sky-900/70">This playlist only returned local files, podcasts, or unavailable items.</p>
+      <section className="console-panel mt-4">
+        <div className="console-panel-inner">
+          <h2 className="console-section-title">No sortable songs found</h2>
+          <p className="console-text mt-1">This playlist only returned local files, podcasts, or unavailable items.</p>
+        </div>
       </section>
     );
   }
 
   return (
-    <section className="mx-auto mt-8 w-full max-w-5xl rounded-[2rem] border border-white/80 bg-white/65 p-6 shadow-[0_20px_60px_rgba(54,128,171,0.18)] backdrop-blur-md">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-        {playlist.imageUrl && (
-          <img
-            alt=""
-            className="h-28 w-28 rounded-3xl object-cover shadow-lg ring-4 ring-white/90"
-            src={playlist.imageUrl}
-          />
-        )}
-        <div className="text-left">
-          <p className="text-sm font-bold text-cyan-700">Ready for sorting</p>
-          <h2 className="text-3xl font-black text-sky-950">{playlist.name}</h2>
-          <p className="mt-1 text-sky-900/70">
-            {trackCount} valid songs from {playlist.ownerName}
-            {playlist.filteredOutCount > 0 ? `, ${playlist.filteredOutCount} local or non-song items skipped` : ""}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-6 rounded-[1.5rem] border border-white/80 bg-gradient-to-b from-white/80 to-cyan-50/70 p-5 shadow-inner">
-        <div className="flex items-start gap-3 text-left">
-          <Sparkles className="mt-1 h-5 w-5 shrink-0 text-cyan-600" aria-hidden="true" />
-          <div>
-            <h3 className="text-xl font-black text-sky-950">Choose a ranking mode</h3>
-            <p className="mt-1 text-sky-900/75">
-              {trackCount > 50
-                ? `This playlist is large, so Fast top 10 or a random subset can save a lot of clicks.`
-                : `Full ranking is manageable here, but Fast top 10 is still available when you just want favourites.`}
+    <section className="console-panel mt-4">
+      <div className="console-panel-inner">
+        <div className="playlist-info">
+          {playlist.imageUrl && <img alt="" className="playlist-cover" src={playlist.imageUrl} />}
+          <div className="min-w-0">
+            <p className="console-label mb-1">Loaded playlist</p>
+            <h2 className="console-section-title truncate">{playlist.name}</h2>
+            <p className="console-text mt-1">
+              {trackCount} valid songs from {playlist.ownerName}
+              {playlist.filteredOutCount > 0 ? `, ${playlist.filteredOutCount} local or non-song items skipped` : ""}
             </p>
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <article className="rounded-[1.5rem] border border-white/80 bg-white/75 p-4 text-left shadow-sm">
-            <div className="flex items-center gap-2 text-cyan-700">
-              <ListMusic className="h-5 w-5" aria-hidden="true" />
-              <h4 className="font-black text-sky-950">Full ranking</h4>
+        <div className="mt-4 border-t border-[var(--console-border)] pt-4">
+          <h3 className="console-section-title">Choose a ranking mode</h3>
+          <p className="console-text mt-1">
+            {trackCount > 50
+              ? "This playlist is large. Fast top 10 or a random subset can reduce the number of comparisons."
+              : "Full ranking is manageable here, and the faster modes remain available."}
+          </p>
+        </div>
+
+        <div className="mode-grid mt-4">
+          <article className="channel-tile">
+            <div className="channel-tile-header">
+              <ListMusic className="console-icon console-icon-primary" aria-hidden="true" />
+              <h4 className="console-card-title">Full ranking</h4>
             </div>
-            <p className="mt-3 text-sm text-sky-900/75">
+            <p className="console-text mt-3">
               Uses every valid song and produces a complete ordered ranking. Ties are allowed.
             </p>
-            <p className="mt-3 rounded-2xl bg-sky-50 px-3 py-2 text-sm font-bold text-sky-800">
-              Estimated {allEstimate} matchups
-            </p>
+            <p className="channel-tile-meta">Estimated {allEstimate} matchups</p>
             <button
-              className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white px-6 font-black text-sky-800 shadow-lg ring-1 ring-sky-100 transition hover:-translate-y-0.5 hover:shadow-xl"
+              className="console-button console-button-primary mt-auto w-full"
               onClick={() => onStart(playlist.tracks, "all", null)}
               type="button"
             >
-              <ListMusic className="h-5 w-5" aria-hidden="true" />
+              <ListMusic className="console-icon console-icon-primary" aria-hidden="true" />
               Start full ranking
             </button>
           </article>
 
-          <article className="rounded-[1.5rem] border border-white/80 bg-white/75 p-4 text-left shadow-sm">
-            <div className="flex items-center gap-2 text-cyan-700">
-              <Zap className="h-5 w-5" aria-hidden="true" />
-              <h4 className="font-black text-sky-950">Fast top 10</h4>
+          <article className="channel-tile">
+            <div className="channel-tile-header">
+              <Zap className="console-icon console-icon-primary" aria-hidden="true" />
+              <h4 className="console-card-title">Fast top 10</h4>
             </div>
-            <p className="mt-3 text-sm text-sky-900/75">
+            <p className="console-text mt-3">
               Quickly estimate your top 10 using a two-loss qualification round, followed by a final ranking of the
               strongest candidates.
             </p>
-            <p className="mt-3 rounded-2xl bg-lime-50 px-3 py-2 text-sm font-bold text-lime-800">
+            <p className="channel-tile-meta">
               Approx. {fastEstimate} matchups, no ties, returns {fastResultCount} song
               {fastResultCount === 1 ? "" : "s"}
             </p>
             <button
-              className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-lime-200 to-cyan-300 px-6 font-black text-sky-900 shadow-lg shadow-cyan-200/50 ring-1 ring-white/90 transition hover:-translate-y-0.5 hover:shadow-xl"
+              className="console-button console-button-primary mt-auto w-full"
               onClick={() => onStart(playlist.tracks, "fast", null)}
               type="button"
             >
-              <Zap className="h-5 w-5" aria-hidden="true" />
+              <Zap className="console-icon console-icon-primary" aria-hidden="true" />
               Find fast top 10
             </button>
           </article>
 
-          <article className="rounded-[1.5rem] border border-white/80 bg-white/75 p-4 text-left shadow-sm">
-            <div className="flex items-center gap-2 text-cyan-700">
-              <Shuffle className="h-5 w-5" aria-hidden="true" />
-              <h4 className="font-black text-sky-950">Random subset</h4>
+          <article className="channel-tile">
+            <div className="channel-tile-header">
+              <Shuffle className="console-icon console-icon-primary" aria-hidden="true" />
+              <h4 className="console-card-title">Random subset</h4>
             </div>
-            <p className="mt-3 text-sm text-sky-900/75">
+            <p className="console-text mt-3">
               Randomly selects the requested number of songs, then fully ranks that subset. Ties are allowed.
             </p>
             <label className="mt-4 block">
-              <span className="text-xs font-black uppercase tracking-[0.14em] text-cyan-700">Subset size</span>
+              <span className="console-label">Subset size</span>
               <div className="mt-3 flex flex-col gap-3">
                 <input
-                  className="h-3 flex-1 accent-cyan-500"
+                  className="range-control"
                   max={trackCount}
                   min={minSubsetSize}
                   onChange={(event) => setSubsetSize(Number(event.target.value))}
@@ -130,7 +121,7 @@ export function PreSortPanel({ playlist, onStart }: PreSortPanelProps) {
                   value={safeSubsetSize}
                 />
                 <input
-                  className="min-h-11 w-full rounded-full border border-cyan-100 bg-white px-4 text-center font-black text-sky-950 shadow-inner outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                  className="console-input text-center"
                   max={trackCount}
                   min={minSubsetSize}
                   onChange={(event) => setSubsetSize(Number(event.target.value))}
@@ -139,15 +130,15 @@ export function PreSortPanel({ playlist, onStart }: PreSortPanelProps) {
                 />
               </div>
             </label>
-            <p className="mt-3 rounded-2xl bg-sky-50 px-3 py-2 text-sm font-bold text-sky-800">
+            <p className="channel-tile-meta">
               {safeSubsetSize} songs, estimated {subsetEstimate} matchups
             </p>
             <button
-              className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-white px-6 font-black text-sky-800 shadow-lg ring-1 ring-sky-100 transition hover:-translate-y-0.5 hover:shadow-xl"
+              className="console-button console-button-primary mt-auto w-full"
               onClick={() => onStart(pickRandomSubset(playlist.tracks, safeSubsetSize), "subset", safeSubsetSize)}
               type="button"
             >
-              <Shuffle className="h-5 w-5" aria-hidden="true" />
+              <Shuffle className="console-icon console-icon-primary" aria-hidden="true" />
               Sort random subset
             </button>
           </article>

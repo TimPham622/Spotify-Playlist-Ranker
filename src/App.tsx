@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { LogIn, LogOut } from "lucide-react";
+import { BottomStatusStrip } from "./components/BottomStatusStrip";
 import { MatchupView } from "./components/MatchupView";
 import { PreSortPanel } from "./components/PreSortPanel";
 import { ResultsView } from "./components/ResultsView";
@@ -10,7 +11,15 @@ import {
   logoutSpotify,
 } from "./lib/spotifyAuth";
 import { clearSortSession, loadSortSession, saveSortSession } from "./lib/sortPersistence";
-import { applySortChoice, createSortSession, type SortChoice, type SortMode, type SortSession } from "./lib/sortingEngine";
+import {
+  applySortChoice,
+  createSortSession,
+  getModeLabel,
+  getSortProgress,
+  type SortChoice,
+  type SortMode,
+  type SortSession,
+} from "./lib/sortingEngine";
 import { fetchSpotifyPlaylistForSorting, type SpotifyPlaylistForSorting } from "./lib/spotifyPlaylist";
 
 export default function App() {
@@ -80,74 +89,103 @@ export default function App() {
     setError(null);
   }
 
+  function handleLogout() {
+    logoutSpotify();
+    clearSortSession();
+    setIsAuthed(false);
+    setPlaylist(null);
+    setSortSession(null);
+    setPlaylistUrl("");
+  }
+
+  const statusText = isAuthed ? "Spotify connected" : "Waiting for Spotify login";
+  const progress = sortSession?.status === "sorting" ? getSortProgress(sortSession) : null;
+
   return (
-    <main className="min-h-screen px-6 py-10">
-      <section className="mx-auto w-full max-w-4xl rounded-[2rem] border border-white/80 bg-white/55 p-8 text-center shadow-[0_24px_70px_rgba(54,128,171,0.22)] backdrop-blur-md">
-        <p className="text-sm font-black uppercase tracking-[0.18em] text-cyan-700">Frutiger Aero Mix Lab</p>
-        <h1 className="mt-3 text-4xl font-black text-sky-900">Spotify Bias Sorter</h1>
-        <p className="mx-auto mt-3 max-w-2xl text-sky-950/75">
-          Paste a Spotify playlist, filter it down to sortable songs, then rank it head-to-head.
-        </p>
+    <div className="app-shell">
+      <header className="app-header">
+        <div className="app-header-inner">
+          <div>
+            <h1 className="app-title">Spotify Playlist Ranker</h1>
+          </div>
 
-        {error && <p className="mt-5 rounded-2xl bg-rose-100 px-4 py-3 text-sm text-rose-800">{error}</p>}
-
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          {isAuthed ? (
-            <>
-              <span className="rounded-full bg-emerald-100 px-5 py-3 text-sm font-black text-emerald-800 shadow-inner ring-1 ring-white/80">
-                Spotify connected
-              </span>
-              <button
-                className="inline-flex rounded-full bg-white px-6 py-3 font-bold text-sky-800 shadow-lg ring-1 ring-sky-100 transition hover:-translate-y-0.5 hover:shadow-xl"
-                onClick={() => {
-                  logoutSpotify();
-                  clearSortSession();
-                  setIsAuthed(false);
-                  setPlaylist(null);
-                  setSortSession(null);
-                  setPlaylistUrl("");
-                }}
-              >
-                <LogOut className="mr-2 h-5 w-5" aria-hidden="true" />
+          <div className="app-header-actions">
+            <span className="status-indicator" aria-label={statusText}>
+              <span className="status-dot" aria-hidden="true" />
+              Spotify: {isAuthed ? "Connected" : "Not connected"}
+            </span>
+            {isAuthed ? (
+              <button className="console-button" onClick={handleLogout} type="button">
+                <LogOut className="console-icon" aria-hidden="true" />
                 Log out
               </button>
-            </>
-          ) : (
-            <button
-              className="inline-flex rounded-full bg-gradient-to-b from-cyan-200 to-sky-400 px-7 py-3 font-black text-white shadow-lg shadow-sky-300/40 ring-1 ring-white/80 transition hover:-translate-y-0.5 hover:from-cyan-100 hover:to-sky-300 hover:shadow-xl"
-              onClick={() => void loginWithSpotify()}
-            >
-              <LogIn className="mr-2 h-5 w-5" aria-hidden="true" />
-              Log in with Spotify
-            </button>
-          )}
+            ) : (
+              <button className="console-button console-button-primary" onClick={() => void loginWithSpotify()} type="button">
+                <LogIn className="console-icon console-icon-primary" aria-hidden="true" />
+                Log in with Spotify
+              </button>
+            )}
+          </div>
         </div>
+      </header>
 
-        {isAuthed && !sortSession && (
-          <form className="mx-auto mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row" onSubmit={handlePlaylistSubmit}>
-            <input
-              className="min-h-12 flex-1 rounded-full border border-sky-100 bg-white/85 px-5 text-sky-950 shadow-inner outline-none transition placeholder:text-sky-900/35 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-              onChange={(event) => setPlaylistUrl(event.target.value)}
-              placeholder="https://open.spotify.com/playlist/..."
-              type="text"
-              value={playlistUrl}
-            />
-            <button
-              className="min-h-12 rounded-full bg-gradient-to-b from-lime-200 to-cyan-300 px-7 font-black text-sky-900 shadow-lg shadow-cyan-200/50 ring-1 ring-white/90 transition hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isLoadingPlaylist || !playlistUrl.trim()}
-              type="submit"
-            >
-              {isLoadingPlaylist ? "Loading..." : "Load playlist"}
-            </button>
-          </form>
+      <main className="app-main">
+        <section className="console-panel">
+          <div className="console-panel-inner">
+            <h2 className="console-section-title">Playlist setup</h2>
+            <p className="console-text mt-1">
+              Paste a Spotify playlist URL, then choose a ranking mode from the channel menu.
+            </p>
+
+            {error && <p className="message-panel message-panel-error mt-3">{error}</p>}
+
+            {isAuthed ? (
+              !sortSession && (
+                <form className="playlist-form mt-4" onSubmit={handlePlaylistSubmit}>
+                  <label>
+                    <span className="console-label">Playlist URL</span>
+                    <input
+                      className="console-input"
+                      onChange={(event) => setPlaylistUrl(event.target.value)}
+                      placeholder="https://open.spotify.com/playlist/..."
+                      type="text"
+                      value={playlistUrl}
+                    />
+                  </label>
+                  <button
+                    className="console-button console-button-primary"
+                    disabled={isLoadingPlaylist || !playlistUrl.trim()}
+                    type="submit"
+                  >
+                    {isLoadingPlaylist ? "Loading..." : "Load playlist"}
+                  </button>
+                </form>
+              )
+            ) : (
+              <div className="message-panel mt-4">
+                Log in with Spotify to load playlists that your account is allowed to read.
+              </div>
+            )}
+          </div>
+        </section>
+
+        {!sortSession && playlist && <PreSortPanel key={playlist.id} playlist={playlist} onStart={handleStartSorting} />}
+        {sortSession?.status === "sorting" && (
+          <MatchupView session={sortSession} onChoose={handleChoice} onStartOver={handleStartOver} />
         )}
-      </section>
+        {sortSession?.status === "complete" && <ResultsView session={sortSession} onStartOver={handleStartOver} />}
 
-      {!sortSession && playlist && <PreSortPanel key={playlist.id} playlist={playlist} onStart={handleStartSorting} />}
-      {sortSession?.status === "sorting" && (
-        <MatchupView session={sortSession} onChoose={handleChoice} onStartOver={handleStartOver} />
-      )}
-      {sortSession?.status === "complete" && <ResultsView session={sortSession} onStartOver={handleStartOver} />}
-    </main>
+        <div className="mt-4">
+          <BottomStatusStrip
+            status={sortSession?.status === "complete" ? "Ranking complete" : statusText}
+            playlistName={sortSession?.playlist.name ?? playlist?.name}
+            modeLabel={sortSession ? getModeLabel(sortSession) : undefined}
+            matchupText={progress ? `${progress.currentMatchupNumber} of ~${progress.displayedEstimate}` : undefined}
+            onStartOver={sortSession || playlist ? handleStartOver : undefined}
+            onLogout={isAuthed ? handleLogout : undefined}
+          />
+        </div>
+      </main>
+    </div>
   );
 }

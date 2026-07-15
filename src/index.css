@@ -1,9 +1,26 @@
 @import "tailwindcss";
 
 :root {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color: #17324d;
-  background: #8d9095;
+  --wii-cream: #fefaf7;
+  --wii-light-grey: #e7e7e7;
+  --wii-panel-grey: #f2f2f2;
+  --wii-mid-grey: #7d7d7d;
+  --wii-white: #ffffff;
+  --wii-blue: #21abde;
+  --wii-grey-blue: #8d9095;
+  --wii-cyan: #26b0d3;
+  --wii-dark-grey: #8b8c91;
+  --wii-bright-blue: #4ebcff;
+  --wii-text: #31343a;
+  --wii-muted-red: #b45a5a;
+  --radius-small: 4px;
+  --radius-medium: 7px;
+  --radius-large: 10px;
+  --console-border: #b8b8b8;
+  --console-shadow: inset 0 1px 0 var(--wii-white), 0 1px 3px rgba(0, 0, 0, 0.14);
+  font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+  color: var(--wii-text);
+  background: var(--wii-cream);
 }
 
 * {
@@ -19,13 +36,535 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background:
-    radial-gradient(circle at 20% 0%, #4ebcff, transparent 30%),
-    radial-gradient(circle at 80% 12%, rgba(191, 245, 191, 0.45), transparent 28%),
-    linear-gradient(180deg, #f8fcff 0%, #eaf7fb 48%, #f7fbef 100%);
+  background: var(--wii-cream);
 }
 
 button,
 input {
   font: inherit;
+}
+
+button {
+  touch-action: manipulation;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--wii-blue);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@layer components {
+  .app-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--wii-cream);
+  }
+
+  .app-header {
+    background: var(--wii-white);
+    border-bottom: 1px solid var(--console-border);
+    box-shadow: inset 0 -1px 0 var(--wii-light-grey);
+  }
+
+  .app-header-inner {
+    width: min(1120px, calc(100% - 24px));
+    margin: 0 auto;
+    min-height: 74px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+  }
+
+  .app-title {
+    margin: 0;
+    color: var(--wii-text);
+    font-size: clamp(1.75rem, 5vw, 2.125rem);
+    font-weight: 600;
+    line-height: 1.05;
+  }
+
+  .app-subtitle {
+    margin: 4px 0 0;
+    color: var(--wii-mid-grey);
+    font-size: 0.875rem;
+  }
+
+  .app-header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .app-main {
+    flex: 1;
+    width: min(1120px, calc(100% - 24px));
+    margin: 0 auto;
+    padding: 18px 0 86px;
+  }
+
+  .console-panel {
+    background: var(--wii-panel-grey);
+    border: 1px solid var(--console-border);
+    border-radius: var(--radius-large);
+    box-shadow: var(--console-shadow);
+  }
+
+  .console-panel-inner {
+    padding: 16px;
+  }
+
+  .console-title {
+    margin: 0;
+    color: var(--wii-text);
+    font-size: clamp(1.25rem, 3.5vw, 1.625rem);
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .console-section-title {
+    margin: 0;
+    color: var(--wii-text);
+    font-size: clamp(1.125rem, 3vw, 1.375rem);
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .console-card-title {
+    margin: 0;
+    color: var(--wii-text);
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .console-text {
+    color: var(--wii-mid-grey);
+    font-size: 0.9375rem;
+    line-height: 1.45;
+  }
+
+  .console-label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--wii-mid-grey);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .console-button {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid var(--console-border);
+    border-radius: var(--radius-medium);
+    background: var(--wii-white);
+    color: var(--wii-text);
+    padding: 8px 14px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    box-shadow: inset 0 1px 0 var(--wii-white), 0 1px 2px rgba(0, 0, 0, 0.12);
+    transition:
+      border-color 140ms ease,
+      background-color 140ms ease,
+      transform 140ms ease;
+  }
+
+  .console-button:hover:not(:disabled) {
+    border-color: var(--wii-blue);
+    background: #fbfdfe;
+    transform: scale(1.01);
+  }
+
+  .console-button:active:not(:disabled) {
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
+    transform: translateY(1px);
+  }
+
+  .console-button:disabled {
+    background: var(--wii-light-grey);
+    color: var(--wii-mid-grey);
+    cursor: not-allowed;
+    opacity: 0.72;
+  }
+
+  .console-button-primary {
+    border-color: var(--wii-blue);
+    color: #137aa0;
+  }
+
+  .console-button-compact {
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: 0.875rem;
+  }
+
+  .console-input {
+    min-height: 44px;
+    width: 100%;
+    border: 1px solid var(--console-border);
+    border-radius: var(--radius-medium);
+    background: var(--wii-white);
+    color: var(--wii-text);
+    padding: 8px 10px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+
+  .console-input:focus {
+    border-color: var(--wii-blue);
+  }
+
+  .console-input::placeholder {
+    color: var(--wii-grey-blue);
+  }
+
+  .message-panel {
+    border: 1px solid var(--console-border);
+    border-left: 4px solid var(--wii-blue);
+    border-radius: var(--radius-medium);
+    background: var(--wii-white);
+    padding: 10px 12px;
+    color: var(--wii-text);
+    font-size: 0.9375rem;
+    box-shadow: inset 0 1px 0 var(--wii-white);
+  }
+
+  .message-panel-error {
+    border-left-color: var(--wii-muted-red);
+  }
+
+  .status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--wii-text);
+    font-size: 0.875rem;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--wii-blue);
+    border: 1px solid #1782ab;
+  }
+
+  .playlist-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: end;
+  }
+
+  .playlist-info {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 14px;
+    align-items: center;
+  }
+
+  .playlist-cover {
+    width: 84px;
+    height: 84px;
+    object-fit: cover;
+    border: 1px solid var(--console-border);
+    border-radius: var(--radius-medium);
+    background: var(--wii-white);
+    padding: 3px;
+  }
+
+  .mode-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .channel-tile {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--console-border);
+    border-radius: var(--radius-large);
+    background: var(--wii-white);
+    padding: 12px;
+    box-shadow: inset 0 1px 0 var(--wii-white), 0 1px 2px rgba(0, 0, 0, 0.12);
+    transition:
+      border-color 140ms ease,
+      box-shadow 140ms ease,
+      transform 140ms ease;
+  }
+
+  .channel-tile:hover,
+  .channel-tile:focus-within {
+    border-color: var(--wii-blue);
+    box-shadow: inset 0 1px 0 var(--wii-white), 0 0 0 2px rgba(33, 171, 222, 0.22);
+    transform: scale(1.01);
+  }
+
+  .channel-tile-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--wii-light-grey);
+  }
+
+  .channel-tile-meta {
+    margin-top: 10px;
+    border: 1px solid var(--wii-light-grey);
+    border-radius: var(--radius-small);
+    background: var(--wii-panel-grey);
+    padding: 7px 8px;
+    color: #126f93;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .range-control {
+    width: 100%;
+    accent-color: var(--wii-blue);
+  }
+
+  .matchup-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .song-channel {
+    display: flex;
+    min-height: 100%;
+    flex-direction: column;
+    border: 1px solid var(--console-border);
+    border-radius: var(--radius-large);
+    background: var(--wii-white);
+    box-shadow: var(--console-shadow);
+  }
+
+  .song-channel:hover,
+  .song-channel:focus-within {
+    border-color: var(--wii-blue);
+  }
+
+  .song-channel-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid var(--console-border);
+    border-radius: var(--radius-large) var(--radius-large) 0 0;
+    background: var(--wii-panel-grey);
+    padding: 8px 10px;
+    color: var(--wii-text);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .song-channel-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 12px;
+  }
+
+  .small-badge {
+    border: 1px solid var(--wii-blue);
+    border-radius: var(--radius-small);
+    background: var(--wii-white);
+    color: #126f93;
+    padding: 3px 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .spotify-frame {
+    margin-top: auto;
+    border: 1px solid var(--console-border);
+    border-radius: var(--radius-medium);
+    background: var(--wii-panel-grey);
+    padding: 6px;
+  }
+
+  .spotify-frame iframe {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-radius: var(--radius-small);
+  }
+
+  .progress-track {
+    height: 13px;
+    overflow: hidden;
+    border: 1px solid var(--console-border);
+    border-radius: var(--radius-small);
+    background: var(--wii-light-grey);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--wii-blue);
+    transition: width 140ms linear;
+  }
+
+  .choice-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    display: grid;
+    gap: 10px;
+    border: 1px solid var(--console-border);
+    border-radius: var(--radius-large);
+    background: var(--wii-panel-grey);
+    padding: 10px;
+    box-shadow: var(--console-shadow);
+  }
+
+  .choice-bar-three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .choice-bar-two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .status-strip {
+    border: 1px solid var(--console-border);
+    border-radius: var(--radius-large);
+    background: var(--wii-panel-grey);
+    box-shadow: var(--console-shadow);
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    color: var(--wii-mid-grey);
+    font-size: 0.875rem;
+  }
+
+  .status-strip-sticky {
+    position: sticky;
+    bottom: 10px;
+    z-index: 9;
+  }
+
+  .status-strip strong {
+    color: var(--wii-text);
+    font-weight: 600;
+  }
+
+  .results-list {
+    border: 1px solid var(--console-border);
+    border-radius: var(--radius-large);
+    overflow: hidden;
+    background: var(--wii-white);
+  }
+
+  .results-row {
+    display: grid;
+    grid-template-columns: 46px 48px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--wii-light-grey);
+  }
+
+  .results-row:nth-child(even) {
+    background: #fbfbfb;
+  }
+
+  .results-row:last-child {
+    border-bottom: 0;
+  }
+
+  .rank-cell {
+    color: #126f93;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .result-art {
+    width: 42px;
+    height: 42px;
+    object-fit: cover;
+    border: 1px solid var(--console-border);
+    border-radius: var(--radius-small);
+    background: var(--wii-panel-grey);
+  }
+
+  .console-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--wii-grey-blue);
+    flex: none;
+  }
+
+  .console-icon-primary {
+    color: var(--wii-blue);
+  }
+}
+
+@media (max-width: 760px) {
+  .app-header-inner,
+  .playlist-info,
+  .playlist-form {
+    grid-template-columns: 1fr;
+  }
+
+  .app-header-inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .app-header-actions {
+    justify-content: flex-start;
+  }
+
+  .mode-grid,
+  .matchup-grid,
+  .choice-bar-three,
+  .choice-bar-two {
+    grid-template-columns: 1fr;
+  }
+
+  .results-row {
+    grid-template-columns: 38px 42px minmax(0, 1fr);
+  }
+
+  .results-row .small-badge {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-main,
+  .app-header-inner {
+    width: min(100% - 16px, 1120px);
+  }
+
+  .status-clock {
+    display: none;
+  }
 }
