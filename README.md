@@ -1,6 +1,9 @@
 # Spotify Bias Sorter
 
-A static, frontend-only React app for ranking a Spotify playlist through head-to-head matchups. It uses Spotify Authorization Code with PKCE, fetches playlist tracks directly from the Spotify Web API, and stores sorting progress in `localStorage` so a refresh does not wipe out an in-progress ranking.
+A static, frontend-only React app for ranking a Spotify playlist through head-to-head matchups. It uses Spotify Authorization Code with PKCE, fetches playlist tracks directly from the Spotify Web API, and stores sorting progress in `localStorage` so a refresh does not wipe out an in-progress ranking.'
+
+<img width="1637" height="900" alt="image" src="https://github.com/user-attachments/assets/d94b2759-52be-409a-abf7-c47ebea11f43" />
+
 
 ## Features
 
